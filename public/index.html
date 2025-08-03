@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📷 Face & Eye Health Scanner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(to bottom right, #e3f2fd, #ffffff);
+      color: #333;
+    }
+
+    /* NAVIGATION BAR */
+    nav {
+      background-color: #1976d2;
+      padding: 16px 32px;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #1976d2;
+      text-align: center;
+    }
+
+    label, select, input[type="file"], button {
+      font-size: 16px;
+      margin: 12px 0;
+      display: block;
+      width: 100%;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    select, input[type="file"], button {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1565c0;
+    }
+
+    video, canvas, img {
+      margin: 10px 0;
+      border-radius: 10px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #result {
+      margin-top: 20px;
+      background: #e0f2f1;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 16px;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    #preview-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #loading {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .spinner {
+      border: 6px solid #e3f2fd;
+      border-top: 6px solid #1976d2;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      margin: auto;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #loading-text {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #1976d2;
+    }
+
+    #scanStatus, #statusMessage {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    #scanStatus {
+      color: blue;
+    }
+
+    #statusMessage {
+      color: green;
+    }
+
+    .blinking-border {
+      border: 4px solid red !important;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { border-color: red; }
+      50% { border-color: transparent; }
+    }
+
+    p.center-text {
+      text-align: center;
+      font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 22px;
+      }
+
+      button, select, input[type="file"] {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>📷 AI Face & Eye Health Scanner</nav>
+
+  <div class="container">
+    <h1>🔬 Smart Scan Interface</h1>
+
+    <label for="scanType"><strong>Choose Scan Type:</strong></label>
+    <select id="scanType">
+      <option value="face">Face</option>
+      <option value="eye">Eye</option>
+    </select>
+
+    <video id="video" class="blinking-border" width="320" height="240" autoplay playsinline></video>
+    <button onclick="captureAndPredict()">📸 Capture & Predict</button>
+
+    <p class="center-text">— OR —</p>
+
+    <input type="file" id="fileInput" accept="image/*"/>
+    <button onclick="uploadAndPredict()">⬆️ Upload & Predict</button>
+
+    <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <div id="loading-text">⏳ Scanning...</div>
+    </div>
+
+    <p id="scanStatus"></p>
+    <div id="result"></div>
+    <div id="statusMessage"></div>
+
+    <div id="preview-container">
+      <h3>🖼️ Scanned Image Preview</h3>
+      <img id="preview" src="" alt="Image Preview" width="320" height="240"/>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const preview = document.getElementById("preview");
+    const resultDiv = document.getElementById("result");
+    const fileInput = document.getElementById("fileInput");
+    const scanTypeSelect = document.getElementById("scanType");
+    const loading = document.getElementById("loading");
+    const loadingText = document.getElementById("loading-text");
+    const scanStatus = document.getElementById("scanStatus");
+    const statusMessage = document.getElementById("statusMessage");
+
+    const conditionDetails = {
+      fatigue: {
+        description: "Fatigue may result from overwork, dehydration, or lack of rest.",
+        tips: ["Get 7–8 hours of sleep", "Drink water frequently", "Take regular short breaks", "Limit caffeine after sunset"]
+      },
+      acne: {
+        description: "Acne is caused by clogged pores, hormones, or irritation.",
+        tips: ["Wash gently twice daily", "Avoid touching acne", "Use non-comedogenic products", "Consult a dermatologist"]
+      },
+      wrinkles: {
+        description: "Wrinkles are part of aging, accelerated by sun exposure and dryness.",
+        tips: ["Use sunscreen and moisturizers", "Stay hydrated", "Avoid smoking", "Eat antioxidant-rich foods"]
+      },
+      cataract: {
+        description: "Cataracts cloud the eye lens, causing blurry vision.",
+        tips: ["Wear sunglasses", "Use brighter lighting", "Get regular eye exams", "Consider surgical options"]
+      },
+      glaucoma: {
+        description: "Glaucoma is nerve damage from eye pressure. Early detection is key.",
+        tips: ["Get eye pressure checks", "Use prescribed drops", "Eat leafy greens", "Limit caffeine"]
+      },
+      "viral conjunctivitis": {
+        description: "Pink eye causes redness, itching, and discharge. It's contagious.",
+        tips: ["Avoid touching eyes", "Wash hands often", "Don't share towels", "Seek medical attention"]
+      },
+      normal_face: {
+        description: "No visible facial concerns. Everything looks healthy.",
+        tips: ["Sleep well", "Stay hydrated", "Use sun protection", "Maintain a balanced lifestyle"]
+      },
+      normal_eye: {
+        description: "Your eyes look normal with no signs of common conditions.",
+        tips: ["Take screen breaks", "Eat eye-friendly foods", "Get regular checkups", "Wear sunglasses outdoors"]
+      }
+    };
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => { video.srcObject = stream; })
+      .catch(err => { console.warn("Camera not available:", err.message); });
+
+    async function captureAndPredict() {
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(async blob => {
+        preview.src = URL.createObjectURL(blob);
+        scanStatus.textContent = "👁️ Face Detected. Starting Scan...";
+        statusMessage.textContent = "";
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await sendImageForPrediction(blob);
+      }, "image/jpeg");
+    }
+
+    async function uploadAndPredict() {
+      const file = fileInput.files[0];
+      if (!file) return alert("Please select an image!");
+      preview.src = URL.createObjectURL(file);
+      scanStatus.textContent = "🖼️ Image Selected. Starting Scan...";
+      statusMessage.textContent = "";
+      await sendImageForPrediction(file);
+    }
+
+    function speakResult(prediction, confidence, time) {
+      const text = `Prediction: ${prediction}. Confidence: ${confidence}. Inference time: ${time}.`;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      speechSynthesis.speak(utterance);
+    }
+
+    async function sendImageForPrediction(imageBlobOrFile) {
+      const formData = new FormData();
+      const scanType = scanTypeSelect.value;
+      formData.append("image", imageBlobOrFile, "input.jpg");
+      formData.append("scan_type", scanType);
+
+      loadingText.textContent = scanType === "face" ? "⏳ Scanning face..." : "⏳ Scanning eyes...";
+      loading.style.display = "block";
+      resultDiv.innerHTML = "";
+      statusMessage.textContent = "";
+      scanStatus.textContent = "";
+
+      try {
+        const res = await fetch("/predict_face", { method: "POST", body: formData });
+        const data = await res.json();
+
+        loading.style.display = "none";
+
+        if (data.error) {
+          resultDiv.innerHTML = `<span style="color:red;">❌ ${data.error}</span>`;
+          return;
+        }
+
+        statusMessage.textContent = "✅ Scanning Successfully Passed!";
+        const confidenceDisplay = Number(data.confidence || 0).toFixed(2) + "%";
+        const timeDisplay = Number(data.inference_time_sec || 0).toFixed(2) + " sec";
+
+        speakResult(data.prediction, confidenceDisplay, timeDisplay);
+
+        let topList = "";
+        if (Array.isArray(data.top_predictions)) {
+          topList = "<strong>🔍 Top Predictions:</strong><ul>";
+          data.top_predictions.forEach(([label, scoreObj]) => {
+            const score = Number(scoreObj?.score || 0).toFixed(2);
+            const level = scoreObj?.level || "Unknown";
+            const levelColor = {
+              "High": "green",
+              "Medium": "orange",
+              "Low": "red",
+              "Very Low": "gray"
+            }[level] || "black";
+            topList += `<li>🔹 <strong>${label}</strong>: ${score}% <span style="color:${levelColor};">(${level})</span></li>`;
+          });
+          topList += "</ul>";
+        }
+
+        const key = data.prediction?.toLowerCase() === "normal"
+          ? (data.region === "face" ? "normal_face" : "normal_eye")
+          : data.prediction?.toLowerCase();
+
+        const info = conditionDetails[key] || {};
+        const descriptionText = info.description ? `<p><strong>🧠 About:</strong> ${info.description}</p>` : "";
+        const tipsList = info.tips ? "<strong>💡 Tips:</strong><ul>" + info.tips.map(t => `<li>✅ ${t}</li>`).join("") + "</ul>" : "";
+
+        resultDiv.innerHTML = `
+          <strong>📌 Prediction:</strong> ${data.prediction} <br/>
+          <strong>🧪 Confidence:</strong> ${confidenceDisplay} <br/>
+          <strong>⚡ Inference Time:</strong> ${timeDisplay} <br/>
+          ${descriptionText}
+          ${tipsList}
+          ${topList}
+        `;
+      } catch (err) {
+        loading.style.display = "none";
+        resultDiv.innerHTML = `<span style="color:red;">❌ Error: ${err.message}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
