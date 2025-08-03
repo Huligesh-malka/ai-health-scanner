@@ -10,7 +10,7 @@ It integrates real-time face and eye scanning, machine learning model prediction
 - 📷 Real-time face & eye image detection
 - 🤖 AI model predicts multiple health-related conditions:
 - 🗣️ Kannada and English voice result support
-- 🧠 Custom CNN-based models trained with UTKFace & Figaro1k datasets
+- Trained my own CNN models using real-world face and eye image data
 - 🎯 Multi-label classification using MobileNetV2
 - 💾 Scan history stored in MySQL database
 - 📲 Mobile-friendly frontend using React or HTML+JS
