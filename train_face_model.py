@@ -37,7 +37,7 @@ def map_confidence_levels(confidence):
 # === Paths ===
 dataset_dir = "datasets/facescan"
 model_dir = "model"
-model_path = os.path.join(model_dir, "face_model.keras")
+
 os.makedirs(model_dir, exist_ok=True)
 
 # === Load Classes ===
@@ -167,4 +167,5 @@ for i, sample_conf in enumerate(y_pred):
     filtered = filter_predictions(pred_dict)
     print(f"\nImage {i+1}:")
     for label, score in filtered.items():
+
         print(f"🔹 {label}: {map_confidence_levels(score)} ({score}%)")
