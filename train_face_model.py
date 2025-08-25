@@ -5,7 +5,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -168,4 +167,5 @@ for i, sample_conf in enumerate(y_pred):
     for label, score in filtered.items():
 
         print(f"🔹 {label}: {map_confidence_levels(score)} ({score}%)")
+
 
