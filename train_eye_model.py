@@ -25,7 +25,6 @@ def apply_clahe(img_path):
 # === Paths ===
 dataset_dir = "datasets/eye"
 model_dir = "model"
-model_path = os.path.join(model_dir, "eye_model.keras")
 os.makedirs(model_dir, exist_ok=True)
 
 # === Load Classes ===
@@ -168,4 +167,5 @@ for i, sample in enumerate(y_pred):
     for idx in sample.argsort()[::-1][:3]:
         label = eye_classes[idx]
         confidence = sample[idx]
+
         print(f"🔸 {label}: {round(confidence*100, 2)}% ({map_confidence(confidence)})")
